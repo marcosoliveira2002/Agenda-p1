@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_masked_text2/flutter_masked_text2.dart';
 import 'package:provider/provider.dart';
 import '../providers/contact_provider.dart';
-import '../model/contact.dart';
+import '../Model/contact.dart';
 
 class ContactFormScreen extends StatefulWidget {
   final Contact? contact;
-  final int? contactIndex;
 
-  ContactFormScreen({this.contact, this.contactIndex});
+  ContactFormScreen({Key? key, this.contact}) : super(key: key);
 
   @override
   _ContactFormScreenState createState() => _ContactFormScreenState();
@@ -25,6 +24,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
     super.initState();
     _phoneController = MaskedTextController(mask: '(00) 00000-0000');
 
+    // Se o contato for fornecido, inicializa os campos com os dados do contato
     if (widget.contact != null) {
       _name = widget.contact!.name;
       _phoneController.text = widget.contact!.phone;
@@ -40,33 +40,14 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
       appBar: AppBar(
         title: Text(widget.contact != null ? 'Editar Contato' : 'Adicionar Contato'),
         actions: [
-          if (widget.contact != null) 
+          if (widget.contact != null)
             IconButton(
               icon: Icon(Icons.delete),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text('Deletar Contato'),
-                    content: Text('Voce tem certeza que deseja deletar esse contato?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context); 
-                        },
-                        child: Text('Cancelar'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          contactProvider.deleteContact(widget.contactIndex!);
-                          Navigator.pop(context); 
-                          Navigator.pop(context); 
-                        },
-                        child: Text('Deletar'),
-                      ),
-                    ],
-                  ),
-                );
+              onPressed: () async {
+                if (widget.contact != null && widget.contact!.id != null) {
+                  await contactProvider.deleteContact(widget.contact!.id!);
+                  Navigator.pop(context); // Voltar à lista de contatos após deletar
+                }
               },
             ),
         ],
@@ -82,7 +63,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                 decoration: InputDecoration(labelText: 'Nome'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Nome é obrigatorio';
+                    return 'Nome é obrigatório';
                   }
                   return null;
                 },
@@ -96,9 +77,9 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                 keyboardType: TextInputType.phone,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Telefone é obrigatorio';
+                    return 'Telefone é obrigatório';
                   } else if (value.length != 15) {
-                    return 'digite um numero valido';
+                    return 'Digite um número válido';
                   }
                   return null;
                 },
@@ -109,7 +90,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || !value.contains('@')) {
-                    return 'Digite um email valido';
+                    return 'Digite um email válido';
                   }
                   return null;
                 },
@@ -119,30 +100,31 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
 
-                    if (widget.contact != null && widget.contactIndex != null) {
-                      contactProvider.updateContact(
-                        widget.contactIndex!,
-                        Contact(
-                          name: _name,
-                          phone: _phoneController.text,
-                          email: _email,
-                        ),
-                      );
+                    // Cria um novo contato com os dados do formulário
+                    Contact newContact = Contact(
+                      name: _name,
+                      phone: _phoneController.text,
+                      email: _email,
+                    );
+
+                    if (widget.contact != null) {
+                      newContact.id = widget.contact!.id;
+                      await contactProvider.updateContact(newContact);
+                      print('Contato atualizado: ${newContact.id}');
                     } else {
-                      contactProvider.addContact(
-                        Contact(
-                          name: _name,
-                          phone: _phoneController.text,
-                          email: _email,
-                        ),
-                      );
+                      // Adiciona um novo contato
+                      await contactProvider.addContact(newContact);
+                      print('Novo contato adicionado');
                     }
 
+                    // Volta para a lista de contatos após salvar ou atualizar
                     Navigator.pop(context);
+                  } else {
+                    print('Formulário inválido');
                   }
                 },
                 child: Text(widget.contact != null ? 'Atualizar' : 'Salvar'),

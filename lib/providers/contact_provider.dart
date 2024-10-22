@@ -1,23 +1,34 @@
 import 'package:flutter/material.dart';
-import '../model/contact.dart';
+import '../Model/contact.dart';
+import '../services/contact_service.dart';
 
 class ContactProvider with ChangeNotifier {
   List<Contact> _contacts = [];
+  final ContactService _contactService = ContactService.instance;
 
   List<Contact> get contacts => _contacts;
 
-  void addContact(Contact contact) {
-    _contacts.add(contact);
+  
+  Future<void> loadContacts() async {
+    _contacts = await _contactService.getContacts();
     notifyListeners();
   }
 
-  void updateContact(int index, Contact updatedContact) {
-    _contacts[index] = updatedContact;
-    notifyListeners();
+
+  Future<void> addContact(Contact contact) async {
+    await _contactService.insertContact(contact); 
+    await loadContacts(); 
   }
 
-  void deleteContact(int index) {
-    _contacts.removeAt(index);
-    notifyListeners(); // Notifica os listeners para atualizar a UI
+
+  Future<void> updateContact(Contact contact) async {
+    await _contactService.updateContact(contact);
+    await loadContacts(); 
+  }
+
+
+  Future<void> deleteContact(int id) async {
+    await _contactService.deleteContact(id);
+    await loadContacts(); 
   }
 }
