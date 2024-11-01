@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../providers/contact_provider.dart';
 import 'contact_form_screen.dart';
-import 'login_screen.dart'; 
+import 'login_screen.dart';
 
 class ContactsListScreen extends StatefulWidget {
   @override
@@ -11,6 +11,8 @@ class ContactsListScreen extends StatefulWidget {
 }
 
 class _ContactsListScreenState extends State<ContactsListScreen> {
+  final _secureStorage = FlutterSecureStorage();
+
   @override
   void initState() {
     super.initState();
@@ -19,10 +21,8 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   }
 
   Future<void> _logout() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');  // Remove o token de login
+    await _secureStorage.delete(key: 'token');  // Remove o token
 
-    // Redireciona o usuário para a tela de login
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => LoginScreen()),
     );
@@ -51,7 +51,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           ),
           IconButton(
             icon: Icon(Icons.exit_to_app),
-            onPressed: _logout,  
+            onPressed: _logout,
           ),
         ],
       ),

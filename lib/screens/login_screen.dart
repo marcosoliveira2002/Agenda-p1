@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/login_service.dart';
 import '../providers/contact_provider.dart';
 import 'contacts_list_screen.dart';
@@ -14,6 +14,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLogin = true;
+  final _secureStorage = FlutterSecureStorage();  
 
   @override
   Widget build(BuildContext context) {
@@ -59,10 +60,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final success = await LoginService.instance.loginUser(username, password);
 
     if (success) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.setString('token', username);
+      await _secureStorage.write(key: 'token', value: username);
 
-      // Após o login bem-sucedido, carregue os contatos e navegue para a tela de listagem
       final contactProvider = Provider.of<ContactProvider>(context, listen: false);
       await contactProvider.loadContacts();
 
